@@ -1,0 +1,13 @@
+# Ignorar todo por defecto
+*
+
+# Archivos que SÍ se subirán
+!.gitignore
+!deteccion_senales_yt.py
+!deteccion_senales_roboflow.py
+!best_roboflow.pt
+!best_reentrenado.pt
+
+# Documentación y dependencias, si existen
+!README.md
+!requirements.txt
