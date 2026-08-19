@@ -7,6 +7,7 @@
 !deteccion_senales_roboflow.py
 !best_roboflow.pt
 !best_reentrenado.pt
+!entrenar.py
 
 # Documentación y dependencias, si existen
 !README.md

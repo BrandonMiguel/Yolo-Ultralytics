@@ -159,27 +159,40 @@ plantilla_video = os.path.join(
 
 ydl_opts = {
 
-    # Buscamos un archivo MP4 de máximo 480p
-    # que ya incluya video/audio en un solo archivo.
+    # Descargar únicamente VIDEO.
+    #
+    # Primero intenta conseguir video de hasta 480p
+    # codificado en H.264 (avc1), que suele tener
+    # muy buena compatibilidad con OpenCV.
+    #
+    # Si no existe H.264, utiliza cualquier otro
+    # formato de video de hasta 480p.
+    #
+    # NO descargamos audio porque YOLO no lo utiliza.
     "format":
-        "best[height<=480][ext=mp4]"
-        "/best[ext=mp4]"
-        "/best[height<=480]"
-        "/best",
+        "bv[height<=480][vcodec^=avc1]"
+        "/bv[height<=480]",
 
-    # Lugar donde se guardará.
+    # Lugar donde se guardará el video temporal.
     "outtmpl": plantilla_video,
 
-    # Solo descargar un video.
+    # No descargar playlists completas.
     "noplaylist": True,
 
-    # Sobrescribir el anterior.
+    # Reemplazar un video temporal anterior.
     "overwrites": True,
 
-    # Mostrar el progreso.
+    # Mostrar el progreso de yt-dlp.
     "quiet": False,
 
-    "no_warnings": False
+    # Mostrar advertencias si existen.
+    "no_warnings": False,
+
+    # Reintentos en caso de una falla temporal.
+    "retries": 10,
+
+    # Reintentos para videos descargados por fragmentos.
+    "fragment_retries": 10,
 }
 
 
