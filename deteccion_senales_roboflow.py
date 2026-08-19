@@ -67,18 +67,36 @@ db_conn = inicializar_db()
 db_cursor = db_conn.cursor()
 ids_contados = set()
 
-# --- CONFIGURACIÓN DE YOLO (MODELO ROBOFLOW 8.4K IMÁGENES) ---
-# [CAMBIO] Apuntamos al nuevo archivo independiente 'best_roboflow.pt'
-ruta_tu_modelo = "C:/GeneradorSenales/best_reentrenado.pt"
+# --- CONFIGURACIÓN DE YOLO ---
+# Obtenemos automáticamente la carpeta donde está este archivo .py.
+# De esta forma el proyecto puede copiarse a otra PC o a otra carpeta
+# sin depender de una ruta fija como C:/GeneradorSenales.
+RUTA_PROYECTO = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
-# Verificación de seguridad para avisarte si Colab aún no termina
+# Nombre del modelo que se utilizará.
+# El archivo .pt debe estar en la misma carpeta que este script.
+NOMBRE_MODELO = "best_reentrenado.pt"
+
+ruta_tu_modelo = os.path.join(
+    RUTA_PROYECTO,
+    NOMBRE_MODELO
+)
+
+# Verificación de seguridad: si el modelo no existe, el programa
+# muestra la ruta exacta donde lo está buscando y termina.
 if not os.path.exists(ruta_tu_modelo):
-    print(f"\n[AVISO] Aún no colocas el archivo '{ruta_tu_modelo}'")
-    print("Cuando termine el entrenamiento en Google Colab, descarga el 'best.pt',")
-    print("muévelo a esta carpeta y renómbralo como 'best_roboflow.pt' para arrancar.\n")
+    print(f"\n[ERROR] No se encontró el modelo '{NOMBRE_MODELO}'.")
+    print("[RUTA ESPERADA]")
+    print(ruta_tu_modelo)
+    print("")
+    print("Coloca el modelo entrenado en la misma carpeta que este script.")
+    print("Si descargaste un archivo llamado 'best.pt', puedes renombrarlo")
+    print(f"como '{NOMBRE_MODELO}' o cambiar NOMBRE_MODELO en este código.\n")
     exit()
 
-print(f"[SISTEMA] Cargando exitosamente el modelo robusto de Roboflow: {ruta_tu_modelo}")
+print(f"[SISTEMA] Cargando modelo YOLO: {ruta_tu_modelo}")
 model = YOLO(ruta_tu_modelo)
 
 # --- INICIO DEL PROGRAMA ---

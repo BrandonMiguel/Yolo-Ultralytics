@@ -1,230 +1,589 @@
-# CAMARA_YOLO - Detección de Señales y Objetos
+# YOLO - Detección, Tracking y Entrenamiento
 
-Proyecto de visión computacional basado en **YOLOv8** para detectar señales de tránsito, vehículos y otros objetos mediante cámara IP/RTSP y videos de YouTube.
+Este proyecto utiliza **Ultralytics YOLOv8** para realizar detección y seguimiento de objetos mediante visión computacional.
+
+Los scripts incluidos permiten trabajar principalmente con:
+
+* Videos de YouTube.
+* Cámaras IP mediante RTSP.
+* Modelos YOLO personalizados en formato `.pt`.
+* Datasets creados y etiquetados en Roboflow.
+* Registro de detecciones en una base de datos MySQL.
+* Entrenamiento local desde Visual Studio Code.
+* Entrenamiento desde Google Colab.
+
+> **Importante:** los nombres de carpetas, modelos, datasets y proyectos utilizados en este documento son ejemplos.
+> Pueden cambiarse dependiendo del equipo o proyecto donde se utilice YOLO.
 
 ---
 
-## 📂 Estructura principal
+# 📂 Estructura general del proyecto
+
+Una estructura básica del proyecto puede ser:
 
 ```text
-CAMARA_YOLO/
+PROYECTO_YOLO/
 │
-├── imagenes/
-├── runs/
-│
-├── best_entrenado.pt
-├── best_masentrenado.pt
 ├── best_reentrenado.pt
-├── best_roboflow.pt
-├── best.pt
-│
-├── camara_yolo.py
-├── deteccion_senales_roboflow.py
 ├── deteccion_senales_yt.py
+├── deteccion_senales_roboflow.py
 ├── entrenar.py
-├── README.md
-└── ...
+└── README.md
 ```
 
-El modelo recomendado actualmente para los scripts principales es:
+El archivo:
 
 ```text
 best_reentrenado.pt
 ```
 
-Los modelos `.pt` deben permanecer dentro de la carpeta principal `CAMARA_YOLO`.
+representa el modelo YOLO entrenado utilizado por los scripts de detección.
+
+Los scripts están preparados para buscar el modelo dentro de la misma carpeta donde se encuentra el código Python.
+
+Por ejemplo:
+
+```text
+PROYECTO_YOLO/
+│
+├── best_reentrenado.pt
+└── deteccion_senales_roboflow.py
+```
+
+Esto permite copiar todo el proyecto a otra computadora o carpeta sin depender de rutas específicas como:
+
+```text
+C:\GeneradorSenales
+```
 
 ---
 
-# ⚙️ Instalación
+# ⚙️ INSTALACIÓN DEL PROYECTO
 
-## 1. Instalar Python
+Esta configuración solamente necesita realizarse **una vez por computadora**.
 
-Se recomienda utilizar:
+Después de instalar todo correctamente, para utilizar normalmente el proyecto solamente será necesario:
 
 ```text
-Python 3.11 o Python 3.12
+1. Abrir XAMPP.
+2. Iniciar MySQL.
+3. Abrir la carpeta del proyecto.
+4. Ejecutar el script requerido.
 ```
 
-Durante la instalación activar:
+---
+
+# 🐍 1. Instalar Python
+
+Es necesario tener Python instalado.
+
+Se recomienda utilizar una versión moderna, por ejemplo:
+
+```text
+Python 3.11
+```
+
+o:
+
+```text
+Python 3.12
+```
+
+Durante la instalación de Python activar la opción:
 
 ```text
 Add Python to PATH
 ```
 
-Comprobar la instalación:
+Después abrir PowerShell, CMD o la terminal integrada de Visual Studio Code.
+
+Comprobar:
 
 ```powershell
 py --version
 ```
 
+Debe aparecer algo parecido a:
+
+```text
+Python 3.12.x
+```
+
 ---
 
-## 2. Instalar XAMPP
+# 🗄️ 2. Instalar XAMPP
 
-Instalar **XAMPP** para utilizar MySQL.
+Los scripts de detección utilizan una base de datos MySQL para registrar los objetos detectados.
 
-Para ejecutar los scripts de detección solamente es necesario iniciar:
+Por este motivo es necesario instalar:
+
+```text
+XAMPP
+```
+
+Una vez instalado, abrir:
+
+```text
+XAMPP Control Panel
+```
+
+e iniciar:
 
 ```text
 MySQL
 ```
 
-No es necesario iniciar Apache.
+No es necesario iniciar Apache para ejecutar estos scripts.
+
+El flujo normal será:
+
+```text
+XAMPP
+   ↓
+MySQL
+   ↓
+Start
+```
 
 ---
 
-## 3. Instalar dependencias
+# 📦 3. Instalar las librerías necesarias
 
-Ejecutar una sola vez:
+Abrir PowerShell, CMD o la terminal integrada de Visual Studio Code.
+
+Primero actualizar `pip`:
 
 ```powershell
 py -m pip install --upgrade pip
 ```
 
-Después:
+Después instalar todas las librerías utilizadas por los scripts:
 
 ```powershell
 py -m pip install -U ultralytics opencv-python mysql-connector-python yt-dlp
 ```
 
-Comprobar:
+---
+
+## ¿Para qué sirve cada librería?
+
+### ultralytics
+
+```text
+ultralytics
+```
+
+Es la librería principal de YOLO.
+
+Permite:
+
+* Cargar modelos `.pt`.
+* Detectar objetos.
+* Realizar tracking.
+* Entrenar modelos.
+* Validar modelos.
+* Dibujar cajas de detección.
+
+---
+
+### opencv-python
+
+```text
+opencv-python
+```
+
+Instala la librería:
+
+```python
+cv2
+```
+
+Se utiliza para:
+
+* Leer videos.
+* Leer cámaras.
+* Mostrar imágenes.
+* Mostrar ventanas en tiempo real.
+* Guardar videos procesados.
+* Dibujar información sobre los frames.
+
+---
+
+### mysql-connector-python
+
+```text
+mysql-connector-python
+```
+
+Permite conectar Python con MySQL.
+
+Se utiliza para guardar información como:
+
+```text
+Fecha y hora
+Tipo de objeto
+Track ID
+Confianza
+```
+
+---
+
+### yt-dlp
+
+```text
+yt-dlp
+```
+
+Se utiliza en el script de YouTube.
+
+Permite descargar temporalmente un video de YouTube para posteriormente procesarlo con YOLO.
+
+---
+
+# ✅ 4. Comprobar que todo esté instalado
+
+Ejecutar:
 
 ```powershell
 py -c "from ultralytics import YOLO; import cv2; import mysql.connector; import yt_dlp; print('TODO INSTALADO CORRECTAMENTE')"
 ```
 
----
-
-# 🗄️ MySQL
-
-La configuración actual es:
+Si todo está correctamente instalado aparecerá:
 
 ```text
-Host: localhost
-Usuario: root
-Contraseña: vacía
+TODO INSTALADO CORRECTAMENTE
 ```
 
-Antes de utilizar los scripts que registran detecciones:
-
-```text
-1. Abrir XAMPP
-2. Iniciar MySQL
-3. Abrir CAMARA_YOLO
-4. Ejecutar el script
-```
-
-La base de datos y tabla necesarias son creadas automáticamente por el código si todavía no existen.
-
-Si el usuario `root` tiene contraseña, debe actualizarse también dentro de los scripts.
+Si este comando funciona, la computadora ya cuenta con las principales dependencias necesarias para ejecutar el proyecto.
 
 ---
 
-# ▶️ Ejecutar el proyecto
+# 🗄️ 5. Configuración de MySQL
 
-## Video de YouTube
+Los scripts utilizan una conexión MySQL similar a:
 
-```powershell
-py deteccion_senales_yt.py
+```python
+host="localhost"
+user="root"
+password=""
 ```
 
-Utiliza el modelo:
+Esto corresponde normalmente a una instalación local de XAMPP donde el usuario:
+
+```text
+root
+```
+
+no tiene contraseña.
+
+Si en otra computadora MySQL utiliza contraseña, será necesario modificar:
+
+```python
+password=""
+```
+
+por:
+
+```python
+password="CONTRASEÑA"
+```
+
+---
+
+# 🗃️ 6. Base de datos
+
+Los scripts pueden crear automáticamente la base de datos utilizada para registrar las detecciones.
+
+Por ejemplo:
+
+```text
+registro_senales_db
+```
+
+y una tabla similar a:
+
+```text
+registros_roboflow
+```
+
+donde se guarda información como:
+
+```text
+id
+fecha_hora
+tipo_objeto
+track_id
+confianza
+```
+
+Por lo tanto, normalmente no es necesario crear manualmente la base de datos.
+
+Solamente se debe iniciar:
+
+```text
+XAMPP → MySQL
+```
+
+antes de ejecutar los scripts de detección.
+
+---
+
+# 🧠 7. Modelo YOLO
+
+Los modelos entrenados tienen extensión:
+
+```text
+.pt
+```
+
+Ejemplos:
+
+```text
+best.pt
+best_reentrenado.pt
+modelo_v1.pt
+modelo_senales.pt
+```
+
+Los scripts del proyecto utilizan por defecto:
 
 ```text
 best_reentrenado.pt
 ```
 
----
+El modelo debe colocarse dentro de la misma carpeta que los scripts.
 
-## Cámara IP / RTSP
-
-```powershell
-py deteccion_senales_roboflow.py
-```
-
-Antes de ejecutarlo revisar dentro del código:
+Ejemplo:
 
 ```text
-IP
+PROYECTO_YOLO/
+│
+├── best_reentrenado.pt
+├── deteccion_senales_yt.py
+└── deteccion_senales_roboflow.py
+```
+
+---
+
+# 🔄 8. Utilizar otro modelo
+
+Cuando se entrena YOLO normalmente se genera:
+
+```text
+best.pt
+```
+
+Si se desea utilizar ese nuevo modelo existen dos opciones.
+
+## Opción 1 - Renombrar el modelo
+
+Cambiar:
+
+```text
+best.pt
+```
+
+por:
+
+```text
+best_reentrenado.pt
+```
+
+y colocarlo dentro de la carpeta del proyecto.
+
+---
+
+## Opción 2 - Cambiar el nombre dentro del código
+
+Si se desea conservar el nombre:
+
+```text
+best_nuevo.pt
+```
+
+se puede modificar:
+
+```python
+NOMBRE_MODELO = "best_reentrenado.pt"
+```
+
+por:
+
+```python
+NOMBRE_MODELO = "best_nuevo.pt"
+```
+
+---
+
+# ▶️ 9. Ejecutar detección sobre un video de YouTube
+
+El script:
+
+```text
+deteccion_senales_yt.py
+```
+
+realiza aproximadamente el siguiente proceso:
+
+```text
+Enlace de YouTube
+       ↓
+yt-dlp descarga el video
+       ↓
+OpenCV abre el video
+       ↓
+YOLO procesa los frames
+       ↓
+YOLO detecta los objetos
+       ↓
+Tracking asigna IDs
+       ↓
+Las detecciones se guardan en MySQL
+       ↓
+Se genera un video procesado
+```
+
+Antes de ejecutarlo:
+
+```text
+1. Abrir XAMPP.
+2. Iniciar MySQL.
+3. Verificar que exista el modelo .pt.
+4. Revisar el enlace de YouTube configurado.
+```
+
+Ejecutar:
+
+```powershell
+py deteccion_senales_yt.py
+```
+
+El enlace del video puede cambiarse dentro del código:
+
+```python
+url_youtube = "URL_DEL_VIDEO"
+```
+
+---
+
+# 📹 10. Ejecutar detección con cámara IP / RTSP
+
+El script:
+
+```text
+deteccion_senales_roboflow.py
+```
+
+está diseñado para trabajar con una cámara IP mediante RTSP.
+
+Antes de ejecutarlo se deben revisar los datos de la cámara:
+
+```text
+Dirección IP
 Usuario
 Contraseña
 Puerto
 Ruta RTSP
 ```
 
-La computadora debe tener acceso de red a la cámara.
+Ejemplo genérico:
 
----
-
-## Cámara / YOLO genérico
-
-```powershell
-py camara_yolo.py
+```python
+url_camara = "rtsp://USUARIO:CONTRASEÑA@IP/RUTA_RTSP"
 ```
 
----
+La computadora debe tener comunicación de red con la cámara.
 
-# 🎮 Comprobar GPU NVIDIA
-
-Si la computadora cuenta con una GPU NVIDIA:
+Después ejecutar:
 
 ```powershell
-nvidia-smi
+py deteccion_senales_roboflow.py
 ```
 
-Comprobar si PyTorch puede utilizarla:
-
-```powershell
-py -c "import torch; print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
-```
-
-Si aparece:
+El programa:
 
 ```text
-CUDA: True
+Lee la cámara
+      ↓
+YOLO analiza los frames
+      ↓
+Detecta objetos
+      ↓
+Asigna Track IDs
+      ↓
+Filtra por confianza
+      ↓
+Guarda detecciones en MySQL
+      ↓
+Muestra las cajas en pantalla
 ```
 
-la GPU está disponible para YOLO.
+> No publicar usuarios, contraseñas, IPs privadas o direcciones RTSP reales en repositorios públicos.
 
 ---
 
-# 🧠 ENTRENAMIENTO DE MODELOS
+# 🧠 ENTRENAMIENTO DE MODELOS YOLO
 
-El entrenamiento se realiza utilizando datasets creados y etiquetados en **Roboflow**.
-
-Existen dos formas:
+Los datasets utilizados para entrenar los modelos se preparan y etiquetan utilizando:
 
 ```text
-1. Entrenamiento local
-   Roboflow → ZIP → CAMARA_YOLO → entrenar.py
-
-2. Google Colab
-   Roboflow → código de descarga → Colab → entrenamiento
+Roboflow
 ```
 
-XAMPP y MySQL **no son necesarios para entrenar**.
+Existen dos formas principales para entrenar:
+
+```text
+1. Entrenamiento local desde Visual Studio Code.
+2. Entrenamiento desde Google Colab.
+```
+
+En ambos casos se puede utilizar como modelo base:
+
+```text
+yolov8n.pt
+```
+
+Al finalizar el entrenamiento YOLO generará principalmente:
+
+```text
+best.pt
+last.pt
+```
+
+El modelo que normalmente se utiliza después es:
+
+```text
+best.pt
+```
 
 ---
 
 # 💻 ENTRENAMIENTO LOCAL
 
-## 1. Preparar el dataset en Roboflow
+# 11. Exportar el dataset desde Roboflow
 
-En Roboflow:
+Cuando el dataset ya esté:
+
+* Etiquetado.
+* Revisado.
+* Con las clases correctas.
+* Con una versión generada.
+
+Entrar a la versión correspondiente dentro de Roboflow.
+
+Seleccionar:
 
 ```text
-1. Abrir el proyecto
-2. Subir las imágenes
-3. Etiquetar los objetos
-4. Revisar las clases
-5. Generar una versión del dataset
-6. Exportar la versión
+Download Dataset
 ```
 
-Al exportar seleccionar un formato compatible con **Ultralytics YOLO / YOLOv8**.
+Elegir formato:
 
-Después seleccionar la opción para descargar el dataset como:
+```text
+YOLOv8
+```
+
+y descargar:
 
 ```text
 ZIP
@@ -232,95 +591,181 @@ ZIP
 
 ---
 
-# 2. Extraer el ZIP
+# 12. Extraer el ZIP
 
-Crear dentro de `CAMARA_YOLO` una carpeta llamada:
+Extraer el ZIP descargado.
+
+En Windows se recomienda utilizar una ruta corta para evitar errores de:
 
 ```text
-dataset
+Ruta demasiado larga
 ```
 
-Extraer dentro de ella el contenido descargado desde Roboflow.
-
-Debe quedar aproximadamente:
+Por ejemplo:
 
 ```text
-CAMARA_YOLO/
-│
-├── best_reentrenado.pt
-├── entrenar.py
-│
-├── dataset/
-│   ├── data.yaml
-│   ├── train/
-│   │   ├── images/
-│   │   └── labels/
-│   ├── valid/
-│   │   ├── images/
-│   │   └── labels/
-│   └── test/
-│       ├── images/
-│       └── labels/
-│
-└── ...
+C:\dataset-yolo
 ```
 
-Roboflow genera las imágenes, etiquetas y el archivo:
+También podría ser:
 
 ```text
+C:\dataset-roboflow
+C:\dataset-v1
+D:\dataset-senales
+```
+
+El nombre puede ser cualquiera.
+
+Lo importante es conocer la ruta completa.
+
+---
+
+# 📂 13. Estructura del dataset
+
+Roboflow normalmente genera una estructura similar a:
+
+```text
+DATASET/
+│
+├── data.yaml
+│
+├── train/
+│   ├── images/
+│   └── labels/
+│
+├── valid/
+│   ├── images/
+│   └── labels/
+│
+└── test/
+    ├── images/
+    └── labels/
+```
+
+Roboflow ya genera automáticamente:
+
+```text
+train
+valid
+test
+images
+labels
 data.yaml
 ```
 
 No es necesario crear esos archivos manualmente.
 
-El código `entrenar.py` busca automáticamente el `data.yaml` dentro de la carpeta `dataset`.
+---
+
+# 🔎 14. Comprobar data.yaml
+
+Antes de entrenar es recomendable comprobar que el archivo:
+
+```text
+data.yaml
+```
+
+existe.
+
+Desde PowerShell:
+
+```powershell
+Get-ChildItem "RUTA_DEL_DATASET" -Filter data.yaml -Recurse
+```
+
+Por ejemplo:
+
+```powershell
+Get-ChildItem "C:\dataset-yolo" -Filter data.yaml -Recurse
+```
+
+Debe mostrar una ruta similar a:
+
+```text
+C:\dataset-yolo\data.yaml
+```
+
+El archivo `data.yaml` le indica a YOLO:
+
+* Dónde están las imágenes.
+* Dónde están las etiquetas.
+* Cuáles son las clases del dataset.
+* Qué carpetas son entrenamiento y validación.
 
 ---
 
-# 3. Código entrenar.py
+# 🐍 15. Crear entrenar.py
 
-Crear el archivo:
+Dentro del proyecto crear:
 
 ```text
-CAMARA_YOLO/entrenar.py
+entrenar.py
 ```
 
-con el siguiente código:
+Ejemplo:
+
+```text
+PROYECTO_YOLO/
+│
+├── entrenar.py
+├── deteccion_senales_yt.py
+├── deteccion_senales_roboflow.py
+└── ...
+```
+
+Pegar el siguiente código:
 
 ```python
 from ultralytics import YOLO
-import torch
 import os
 
 
 # ============================================================
-# CONFIGURACIÓN DEL ENTRENAMIENTO
+# CONFIGURACIÓN
 # ============================================================
 
-# Modelo que se utilizará como punto de partida.
-MODELO = "best_reentrenado.pt"
+# Modelo YOLO que se utilizará como base.
+# Si yolov8n.pt no existe en la PC, Ultralytics
+# puede descargarlo automáticamente.
+MODELO_BASE = "yolov8n.pt"
 
-# Carpeta donde se extrajo el ZIP de Roboflow.
-CARPETA_DATASET = "dataset"
 
-# Cantidad máxima de épocas.
+# Ruta donde se extrajo el ZIP de Roboflow.
+#
+# CAMBIAR ESTA RUTA por la ruta real donde se
+# encuentra el dataset en la computadora.
+CARPETA_DATASET = r"C:\RUTA\DEL\DATASET"
+
+
+# Número de épocas.
+#
+# Una época significa que YOLO recorrió una vez
+# todo el conjunto de imágenes de entrenamiento.
 EPOCHS = 100
 
-# Tamaño de imagen utilizado durante el entrenamiento.
+
+# Resolución utilizada durante el entrenamiento.
 IMGSZ = 640
 
+
 # Nombre con el que se guardará este entrenamiento.
-NOMBRE_ENTRENAMIENTO = "reentrenamiento_local"
+#
+# Es recomendable utilizar un nombre diferente
+# para cada prueba o versión.
+NOMBRE_ENTRENAMIENTO = "modelo_v1"
 
 
 # ============================================================
-# BUSCAR data.yaml DE ROBOFLOW
+# FUNCIÓN PARA BUSCAR data.yaml
 # ============================================================
 
 def buscar_data_yaml(carpeta):
 
+    # Recorre todas las carpetas internas del dataset.
     for raiz, carpetas, archivos in os.walk(carpeta):
 
+        # Si encuentra data.yaml devuelve su ruta.
         if "data.yaml" in archivos:
 
             return os.path.join(
@@ -328,6 +773,7 @@ def buscar_data_yaml(carpeta):
                 "data.yaml"
             )
 
+    # Si no encuentra data.yaml devuelve None.
     return None
 
 
@@ -339,187 +785,144 @@ def main():
 
     print("")
     print("==============================================")
-    print("         ENTRENAMIENTO LOCAL YOLO")
+    print("          ENTRENAMIENTO LOCAL YOLO")
     print("==============================================")
     print("")
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # RUTA DEL PROYECTO
-    # --------------------------------------------------------
+    # ========================================================
 
+    # Obtiene automáticamente la carpeta donde
+    # está guardado entrenar.py.
     ruta_proyecto = os.path.dirname(
         os.path.abspath(__file__)
     )
 
-
-    # --------------------------------------------------------
-    # COMPROBAR MODELO
-    # --------------------------------------------------------
-
-    ruta_modelo = os.path.join(
-        ruta_proyecto,
-        MODELO
-    )
-
-    if not os.path.exists(ruta_modelo):
-
-        print("[ERROR] No se encontró el modelo:")
-        print(ruta_modelo)
-
-        return
-
-
-    print("[MODELO]")
-    print(ruta_modelo)
+    print("[PROYECTO]")
+    print(ruta_proyecto)
     print("")
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # COMPROBAR DATASET
-    # --------------------------------------------------------
+    # ========================================================
 
-    ruta_dataset = os.path.join(
-        ruta_proyecto,
+    print("[SISTEMA] Buscando dataset...")
+
+
+    # Comprueba que la carpeta configurada exista.
+    if not os.path.exists(CARPETA_DATASET):
+
+        print("")
+        print("[ERROR] No se encontró la carpeta:")
+        print(CARPETA_DATASET)
+
+        print("")
+        print(
+            "Revisa CARPETA_DATASET y confirma "
+            "la ubicación donde extrajiste el ZIP."
+        )
+
+        return
+
+
+    # ========================================================
+    # BUSCAR data.yaml
+    # ========================================================
+
+    data_yaml = buscar_data_yaml(
         CARPETA_DATASET
     )
 
-    if not os.path.exists(ruta_dataset):
 
-        print("[ERROR] No se encontró la carpeta del dataset:")
-        print(ruta_dataset)
-
-        print("")
-        print(
-            "Extrae el ZIP descargado desde Roboflow "
-            "dentro de una carpeta llamada 'dataset'."
-        )
-
-        return
-
-
-    # --------------------------------------------------------
-    # BUSCAR data.yaml
-    # --------------------------------------------------------
-
-    data_yaml = buscar_data_yaml(
-        ruta_dataset
-    )
-
+    # Si no encontró el archivo, detener.
     if data_yaml is None:
 
+        print("")
         print("[ERROR] No se encontró data.yaml.")
+
         print("")
         print(
-            "Verifica que el ZIP de Roboflow "
-            "se haya extraído correctamente."
+            "Comprueba que el ZIP de Roboflow "
+            "se haya extraído completamente."
         )
 
         return
 
 
-    print("[DATASET]")
+    print("")
+    print("[DATASET ENCONTRADO]")
     print(data_yaml)
     print("")
 
 
-    # --------------------------------------------------------
-    # COMPROBAR GPU
-    # --------------------------------------------------------
+    # ========================================================
+    # CARGAR MODELO YOLO
+    # ========================================================
 
-    if torch.cuda.is_available():
-
-        dispositivo = 0
-
-        print("[GPU] CUDA disponible")
-
-        print(
-            "[GPU]",
-            torch.cuda.get_device_name(0)
-        )
-
-    else:
-
-        dispositivo = "cpu"
-
-        print("[GPU] CUDA no disponible.")
-        print("[GPU] Se utilizará CPU.")
-
-
+    print("[SISTEMA] Cargando modelo base:")
+    print(MODELO_BASE)
     print("")
 
-
-    # --------------------------------------------------------
-    # CARGAR MODELO
-    # --------------------------------------------------------
-
-    print("[SISTEMA] Cargando modelo...")
 
     model = YOLO(
-        ruta_modelo
+        MODELO_BASE
     )
 
-    print("[SISTEMA] Modelo cargado correctamente.")
-    print("")
 
-
-    # --------------------------------------------------------
-    # ENTRENAMIENTO
-    # --------------------------------------------------------
+    # ========================================================
+    # INICIAR ENTRENAMIENTO
+    # ========================================================
 
     print("==============================================")
     print("          INICIANDO ENTRENAMIENTO")
     print("==============================================")
     print("")
 
-    resultados = model.train(
 
-        # Dataset generado por Roboflow.
+    model.train(
+
+        # Archivo generado por Roboflow.
         data=data_yaml,
 
-        # Número máximo de épocas.
+        # Cantidad de épocas.
         epochs=EPOCHS,
 
-        # Resolución de entrenamiento.
+        # Resolución utilizada.
         imgsz=IMGSZ,
 
-        # GPU 0 si existe. CPU si no hay CUDA.
-        device=dispositivo,
-
-        # Batch automático cuando existe GPU.
-        batch=-1 if torch.cuda.is_available() else 8,
-
-        # Detener si el modelo deja de mejorar.
-        patience=30,
-
-        # Guardar los pesos.
-        save=True,
-
-        # Generar gráficas de resultados.
-        plots=True,
-
-        # Carpeta principal de resultados.
+        # Carpeta donde se guardarán
+        # todos los resultados.
         project=os.path.join(
             ruta_proyecto,
             "runs",
             "entrenamientos"
         ),
 
-        # Nombre de esta ejecución.
-        name=NOMBRE_ENTRENAMIENTO
+        # Nombre del entrenamiento.
+        name=NOMBRE_ENTRENAMIENTO,
+
+        # Guardar los pesos del modelo.
+        save=True,
+
+        # Crear gráficas del entrenamiento.
+        plots=True
     )
 
 
-    # --------------------------------------------------------
-    # RUTA DEL MODELO RESULTANTE
-    # --------------------------------------------------------
+    # ========================================================
+    # UBICACIÓN DEL MODELO RESULTANTE
+    # ========================================================
 
-    ruta_resultado = os.path.join(
+    ruta_best = os.path.join(
         ruta_proyecto,
         "runs",
         "entrenamientos",
         NOMBRE_ENTRENAMIENTO,
-        "weights"
+        "weights",
+        "best.pt"
     )
 
 
@@ -529,19 +932,9 @@ def main():
     print("==============================================")
     print("")
 
-    print("[RESULTADOS]")
-    print(ruta_resultado)
-
+    print("[MEJOR MODELO GENERADO]")
     print("")
-    print("[MODELO GENERADO]")
-
-    print(
-        os.path.join(
-            ruta_resultado,
-            "best.pt"
-        )
-    )
-
+    print(ruta_best)
     print("")
 
 
@@ -555,68 +948,36 @@ if __name__ == "__main__":
 
 ---
 
-# 4. ¿Para qué sirve entrenar.py?
+# ⚙️ 16. Qué cambiar antes de entrenar
 
-`entrenar.py` automatiza el entrenamiento local.
+Antes de ejecutar:
 
-El proceso que realiza es:
-
-```text
-Ejecutar entrenar.py
-        ↓
-Buscar best_reentrenado.pt
-        ↓
-Buscar carpeta dataset
-        ↓
-Encontrar data.yaml de Roboflow
-        ↓
-Comprobar GPU
-        ↓
-Cargar el modelo
-        ↓
-Entrenar
-        ↓
-Guardar best.pt
+```powershell
+py entrenar.py
 ```
 
-Esto evita tener que escribir el comando completo de entrenamiento cada vez.
+revisar las variables del inicio.
 
 ---
 
-# 5. ¿Qué hay que cambiar antes de entrenar?
-
-La configuración se encuentra al principio de `entrenar.py`.
-
-## MODELO
+## MODELO_BASE
 
 ```python
-MODELO = "best_reentrenado.pt"
+MODELO_BASE = "yolov8n.pt"
 ```
 
 Indica qué modelo se utilizará como punto de partida.
 
-Para seguir mejorando el modelo actual:
+Para crear un nuevo modelo utilizando YOLOv8:
 
 ```python
-MODELO = "best_reentrenado.pt"
+MODELO_BASE = "yolov8n.pt"
 ```
 
-Si posteriormente existe otro modelo:
-
-```text
-best_nuevo.pt
-```
-
-se puede cambiar a:
+Si después se desea continuar entrenando un modelo propio:
 
 ```python
-MODELO = "best_nuevo.pt"
-```
-
-El archivo debe existir dentro de:
-
-```text
-CAMARA_YOLO/
+MODELO_BASE = r"C:\Modelos\best.pt"
 ```
 
 ---
@@ -624,18 +985,24 @@ CAMARA_YOLO/
 ## CARPETA_DATASET
 
 ```python
-CARPETA_DATASET = "dataset"
+CARPETA_DATASET = r"C:\RUTA\DEL\DATASET"
 ```
 
-Indica dónde está el dataset exportado desde Roboflow.
+Debe cambiarse por la ruta real.
 
-Si se mantiene:
+Por ejemplo:
 
-```text
-CAMARA_YOLO/dataset/
+```python
+CARPETA_DATASET = r"C:\dataset-yolo"
 ```
 
-no es necesario modificar este valor.
+o:
+
+```python
+CARPETA_DATASET = r"D:\datasets\senalizacion"
+```
+
+La `r` antes de las comillas permite trabajar correctamente con rutas de Windows.
 
 ---
 
@@ -645,33 +1012,27 @@ no es necesario modificar este valor.
 EPOCHS = 100
 ```
 
-Indica la cantidad máxima de épocas de entrenamiento.
+Una época significa una pasada completa por el dataset.
 
-Ejemplos:
-
-Entrenamiento corto de prueba:
+Para una prueba corta:
 
 ```python
 EPOCHS = 20
 ```
 
-Entrenamiento normal:
+Para un entrenamiento normal:
 
 ```python
 EPOCHS = 100
 ```
 
-Entrenamiento más largo:
+También puede utilizarse:
 
 ```python
 EPOCHS = 150
 ```
 
-Para comenzar se recomienda utilizar:
-
-```python
-EPOCHS = 100
-```
+dependiendo del proyecto.
 
 ---
 
@@ -681,455 +1042,702 @@ EPOCHS = 100
 IMGSZ = 640
 ```
 
-Indica la resolución utilizada durante el entrenamiento.
+Representa la resolución utilizada durante el entrenamiento.
 
-Se recomienda mantener:
+Como configuración inicial se recomienda mantener:
 
-```python
-IMGSZ = 640
+```text
+640
 ```
-
-como configuración inicial.
 
 ---
 
 ## NOMBRE_ENTRENAMIENTO
 
 ```python
-NOMBRE_ENTRENAMIENTO = "reentrenamiento_local"
+NOMBRE_ENTRENAMIENTO = "modelo_v1"
 ```
 
-Sirve para diferenciar los entrenamientos.
+Sirve para identificar los resultados.
 
 Por ejemplo:
 
 ```python
-NOMBRE_ENTRENAMIENTO = "senales_version_2"
+NOMBRE_ENTRENAMIENTO = "modelo_v1"
 ```
 
-generará:
-
-```text
-runs/
-└── entrenamientos/
-    └── senales_version_2/
-```
-
-Para cada entrenamiento nuevo se recomienda utilizar un nombre diferente.
-
-Ejemplos:
+Otro entrenamiento:
 
 ```python
-NOMBRE_ENTRENAMIENTO = "senales_v2"
+NOMBRE_ENTRENAMIENTO = "modelo_v2"
 ```
 
-```python
-NOMBRE_ENTRENAMIENTO = "senales_v3"
-```
+Otro:
 
 ```python
 NOMBRE_ENTRENAMIENTO = "prueba_150_epochs"
 ```
 
+Esto permite conservar varias pruebas separadas.
+
 ---
 
-# 6. Ejecutar entrenamiento local
+# ▶️ 17. Ejecutar entrenamiento local
 
-Abrir `CAMARA_YOLO` desde Visual Studio Code.
+Abrir la carpeta del proyecto en Visual Studio Code.
 
-En la terminal comprobar que se encuentre dentro de la carpeta del proyecto.
-
-Ejemplo:
-
-```text
-PS C:\Users\USUARIO\Documents\CAMARA_YOLO>
-```
-
-Ejecutar:
+Abrir la terminal integrada y ejecutar:
 
 ```powershell
 py entrenar.py
 ```
 
-No es necesario iniciar XAMPP para entrenar.
+El código realizará:
+
+```text
+Busca la carpeta del dataset
+        ↓
+Busca data.yaml
+        ↓
+Carga yolov8n.pt
+        ↓
+Utiliza el dataset de Roboflow
+        ↓
+Entrena el modelo
+        ↓
+Guarda los resultados
+        ↓
+Genera best.pt
+```
+
+El entrenamiento puede tardar desde minutos hasta varias horas dependiendo de:
+
+* Cantidad de imágenes.
+* Número de épocas.
+* Resolución.
+* Procesador.
+* Tarjeta gráfica.
+* Capacidad general de la computadora.
 
 ---
 
-# 7. Resultado del entrenamiento
+# 📦 18. Resultado del entrenamiento local
 
-Al finalizar se generará:
+Al terminar se generará una estructura similar a:
 
 ```text
-CAMARA_YOLO/
+PROYECTO_YOLO/
 └── runs/
     └── entrenamientos/
-        └── reentrenamiento_local/
+        └── modelo_v1/
             └── weights/
                 ├── best.pt
                 └── last.pt
 ```
 
-## best.pt
+El archivo principal es:
 
 ```text
 best.pt
 ```
 
-Es el modelo que se debe probar y utilizar después del entrenamiento.
-
-## last.pt
-
-```text
-last.pt
-```
-
-Corresponde al último estado guardado del entrenamiento.
-
-Puede utilizarse para continuar un entrenamiento interrumpido.
+Ese archivo contiene el modelo entrenado.
 
 ---
 
-# 8. Probar el nuevo modelo
+# ☁️ ENTRENAMIENTO DESDE GOOGLE COLAB
 
-Copiar:
+Google Colab permite realizar el entrenamiento desde el navegador.
 
-```text
-best.pt
-```
-
-a la carpeta principal y renombrarlo para no sobrescribir inmediatamente el modelo anterior.
-
-Ejemplo:
+En este método:
 
 ```text
-best_nuevo.pt
+Roboflow descarga automáticamente el dataset
+                    ↓
+Google Colab realiza el entrenamiento
+                    ↓
+Google Drive guarda los resultados
 ```
-
-Quedaría:
-
-```text
-CAMARA_YOLO/
-│
-├── best_reentrenado.pt
-├── best_nuevo.pt
-└── ...
-```
-
-Comprobar que el modelo cargue:
-
-```powershell
-py -c "from ultralytics import YOLO; model=YOLO('best_nuevo.pt'); print(model.names)"
-```
-
-Después de comprobar que funciona correctamente se puede utilizar en los scripts de detección.
 
 ---
 
-# ☁️ ENTRENAMIENTO EN GOOGLE COLAB
+# 19. Crear un Notebook de Google Colab
 
-Google Colab permite realizar el mismo entrenamiento utilizando una GPU en la nube.
-
-En este caso Roboflow puede generar directamente el código necesario para descargar el dataset.
+Abrir Google Colab y crear un Notebook nuevo.
 
 ---
 
-# 1. Activar GPU
+# 📦 20. Instalar Ultralytics y Roboflow
 
-En Google Colab:
-
-```text
-Entorno de ejecución
-→ Cambiar tipo de entorno de ejecución
-→ GPU
-```
-
-Comprobar:
+Primera celda:
 
 ```python
-!nvidia-smi
-```
+# Instala las librerías necesarias para:
+# - Descargar el dataset desde Roboflow.
+# - Entrenar YOLO.
 
----
-
-# 2. Instalar librerías
-
-Ejecutar:
-
-```python
 !pip install -U ultralytics roboflow
 ```
 
 ---
 
-# 3. Obtener el código de Roboflow
+# ☁️ 21. Conectar Google Drive
 
-Desde Roboflow:
+Nueva celda:
+
+```python
+# Conecta Google Drive con Google Colab.
+#
+# Esto permite guardar los resultados del entrenamiento
+# en Drive y conservarlos después de cerrar Colab.
+
+from google.colab import drive
+
+drive.mount("/content/drive")
+```
+
+Google solicitará autorización.
+
+---
+
+# 📂 22. Crear una carpeta para guardar los entrenamientos
+
+Nueva celda:
+
+```python
+import os
+
+
+# Ruta de Google Drive donde se guardarán los resultados.
+#
+# El nombre PROYECTO_YOLO puede cambiarse.
+RUTA_DRIVE = (
+    "/content/drive/MyDrive/"
+    "PROYECTO_YOLO"
+)
+
+
+# Crear automáticamente la carpeta de entrenamientos.
+os.makedirs(
+    f"{RUTA_DRIVE}/entrenamientos",
+    exist_ok=True
+)
+
+
+print("Carpeta lista:")
+print(RUTA_DRIVE)
+```
+
+Por ejemplo, podría cambiarse:
+
+```python
+RUTA_DRIVE = (
+    "/content/drive/MyDrive/"
+    "DeteccionSenales"
+)
+```
+
+---
+
+# 🤖 23. Obtener el código de Roboflow
+
+Entrar al dataset terminado en Roboflow.
+
+Buscar:
 
 ```text
-Proyecto
-→ Versions
+Versions
 → Seleccionar versión
-→ Export / Download Dataset
-→ Formato YOLO
+→ Download Dataset
+→ YOLOv8
 → Show Download Code
 ```
 
-Roboflow generará un código específico para el proyecto.
-
-Ejemplo de referencia:
+Roboflow generará un código similar a:
 
 ```python
 from roboflow import Roboflow
 
+
+# Conexión a Roboflow.
 rf = Roboflow(
     api_key="TU_API_KEY"
 )
 
+
+# Seleccionar workspace y proyecto.
 project = rf.workspace(
     "TU_WORKSPACE"
 ).project(
     "TU_PROYECTO"
 )
 
+
+# Seleccionar la versión del dataset.
 version = project.version(
     NUMERO_VERSION
 )
 
+
+# Descargar el dataset en formato YOLOv8.
 dataset = version.download(
     "yolov8"
 )
 ```
 
-Se debe utilizar **el código generado por Roboflow**, no copiar los valores del ejemplo.
+Los siguientes valores cambian dependiendo de cada proyecto:
 
-La API Key no debe subirse a GitHub ni guardarse en este README.
+```text
+TU_API_KEY
+TU_WORKSPACE
+TU_PROYECTO
+NUMERO_VERSION
+```
+
+Lo recomendable es copiar directamente el código generado por Roboflow.
+
+> **IMPORTANTE:** la API Key es privada.
+> No debe colocarse en GitHub, README, repositorios públicos ni capturas compartidas.
 
 ---
 
-# 4. Comprobar el dataset
+# ✅ 24. Comprobar que Roboflow descargó correctamente el dataset
 
-Después de descargarlo:
+Después de ejecutar el código de Roboflow:
 
 ```python
+import os
+
+
+# Construir la ruta al archivo data.yaml.
+DATA_YAML = os.path.join(
+    dataset.location,
+    "data.yaml"
+)
+
+
+print("Dataset descargado en:")
 print(dataset.location)
+
+
+print("")
+
+
+print("Archivo data.yaml:")
+print(DATA_YAML)
+
+
+print("")
+
+
+print("¿Existe?")
+print(
+    os.path.exists(DATA_YAML)
+)
 ```
 
-Roboflow indicará la carpeta donde se descargó el dataset.
+El resultado importante es:
+
+```text
+True
+```
+
+Si aparece:
+
+```text
+True
+```
+
+significa que el dataset está listo para ser utilizado por YOLO.
 
 ---
 
-# 5. Subir el modelo a Colab
+# 🧠 25. Entrenar YOLO en Google Colab
 
-Si se desea seguir entrenando:
-
-```text
-best_reentrenado.pt
-```
-
-subir ese archivo a Google Colab.
-
-Desde el explorador de archivos de Colab:
-
-```text
-Archivos
-→ Subir
-→ best_reentrenado.pt
-```
-
-Normalmente quedará como:
-
-```text
-/content/best_reentrenado.pt
-```
-
----
-
-# 6. Entrenar en Google Colab
-
-Ejecutar:
+Nueva celda:
 
 ```python
 from ultralytics import YOLO
 
 
-# Modelo que se continuará entrenando.
+# ============================================================
+# CONFIGURACIÓN
+# ============================================================
+
+# Modelo utilizado como punto de partida.
+MODELO_BASE = "yolov8n.pt"
+
+
+# Cantidad de épocas.
+EPOCHS = 100
+
+
+# Resolución de entrenamiento.
+IMGSZ = 640
+
+
+# Nombre de este entrenamiento.
+NOMBRE_ENTRENAMIENTO = "modelo_v1"
+
+
+# ============================================================
+# CARGAR MODELO
+# ============================================================
+
 model = YOLO(
-    "/content/best_reentrenado.pt"
+    MODELO_BASE
 )
 
 
-# Entrenamiento.
-model.train(
+# ============================================================
+# ENTRENAMIENTO
+# ============================================================
 
-    # data.yaml generado por Roboflow.
-    data=f"{dataset.location}/data.yaml",
+results = model.train(
+
+    # Dataset descargado desde Roboflow.
+    data=DATA_YAML,
 
     # Cantidad de épocas.
-    epochs=100,
+    epochs=EPOCHS,
 
     # Resolución.
-    imgsz=640,
+    imgsz=IMGSZ,
 
-    # GPU de Google Colab.
-    device=0,
+    # Guardar los resultados directamente
+    # en Google Drive.
+    project=f"{RUTA_DRIVE}/entrenamientos",
 
-    # Nombre del entrenamiento.
-    name="reentrenamiento_colab"
+    # Nombre de esta ejecución.
+    name=NOMBRE_ENTRENAMIENTO
 )
 ```
 
 ---
 
-# 7. ¿Qué cambiar en Colab?
+# ⚙️ 26. Qué cambiar antes de entrenar en Colab
 
-Para cambiar las épocas:
+Revisar:
 
 ```python
-epochs=100
+MODELO_BASE = "yolov8n.pt"
+
+EPOCHS = 100
+
+IMGSZ = 640
+
+NOMBRE_ENTRENAMIENTO = "modelo_v1"
 ```
 
-Por ejemplo:
+El nombre puede cambiarse para cada entrenamiento.
+
+Ejemplo:
 
 ```python
-epochs=150
+NOMBRE_ENTRENAMIENTO = "modelo_v2"
 ```
 
-Para cambiar el tamaño de imagen:
+o:
 
 ```python
-imgsz=640
-```
-
-Para cambiar el modelo:
-
-```python
-model = YOLO(
-    "/content/best_reentrenado.pt"
-)
-```
-
-Si se subió otro modelo:
-
-```python
-model = YOLO(
-    "/content/best_nuevo.pt"
-)
+NOMBRE_ENTRENAMIENTO = "senalizacion_v3"
 ```
 
 ---
 
-# 8. Descargar el resultado de Colab
+# 📍 27. Saber dónde quedó best.pt
 
-Al finalizar el entrenamiento se generará una carpeta:
+Cuando termine el entrenamiento ejecutar:
+
+```python
+print("Mejor modelo generado:")
+
+print(
+    model.trainer.best
+)
+```
+
+Mostrará una ruta similar a:
 
 ```text
-runs/
-└── detect/
-    └── reentrenamiento_colab/
-        └── weights/
-            ├── best.pt
-            └── last.pt
+/content/drive/MyDrive/PROYECTO_YOLO/entrenamientos/modelo_v1/weights/best.pt
 ```
 
-Descargar:
+El archivo:
 
 ```text
 best.pt
 ```
 
-y copiarlo posteriormente dentro de:
+se encuentra guardado en Google Drive.
+
+Por lo tanto, aunque posteriormente se cierre Google Colab, el modelo permanecerá en Drive.
+
+---
+
+# 📥 28. Utilizar el modelo generado
+
+Después de obtener:
 
 ```text
-CAMARA_YOLO/
+best.pt
 ```
 
-Se recomienda renombrarlo antes de reemplazar el modelo anterior.
+descargarlo desde Google Drive.
+
+Después colocarlo dentro de la carpeta del proyecto local.
 
 Por ejemplo:
 
 ```text
-best_colab_nuevo.pt
+PROYECTO_YOLO/
+│
+├── best_reentrenado.pt
+├── deteccion_senales_yt.py
+└── deteccion_senales_roboflow.py
+```
+
+Si los scripts esperan:
+
+```text
+best_reentrenado.pt
+```
+
+se puede renombrar:
+
+```text
+best.pt
+```
+
+como:
+
+```text
+best_reentrenado.pt
+```
+
+También puede mantenerse otro nombre cambiando:
+
+```python
+NOMBRE_MODELO = "best_reentrenado.pt"
 ```
 
 ---
 
-# 🔄 Resumen: entrenamiento local
+# 🔄 29. Resumen del entrenamiento local
 
 ```text
-Roboflow
+ROBOFLOW
    ↓
-Subir y etiquetar imágenes
+Dataset terminado
    ↓
 Generar versión
    ↓
-Exportar formato YOLO
+Exportar como YOLOv8
    ↓
 Descargar ZIP
    ↓
-Extraer en CAMARA_YOLO/dataset
+Extraer en una ruta corta
+   ↓
+Comprobar data.yaml
    ↓
 Configurar entrenar.py
    ↓
 py entrenar.py
    ↓
-runs/entrenamientos/.../weights/best.pt
+Esperar entrenamiento
    ↓
-Probar modelo
+best.pt
 ```
 
 ---
 
-# ☁️ Resumen: Google Colab
+# ☁️ 30. Resumen del entrenamiento en Google Colab
 
 ```text
-Roboflow
+ROBOFLOW
+   ↓
+Dataset terminado
    ↓
 Generar versión
    ↓
-Obtener código de descarga
+Show Download Code
    ↓
-Abrir Google Colab
+GOOGLE COLAB
    ↓
-Activar GPU
+Instalar ultralytics + roboflow
    ↓
-Instalar Ultralytics y Roboflow
+Conectar Google Drive
    ↓
 Ejecutar código generado por Roboflow
    ↓
-Subir best_reentrenado.pt
+Comprobar data.yaml
    ↓
 Ejecutar entrenamiento
    ↓
-Descargar best.pt
+Esperar
    ↓
-Copiarlo a CAMARA_YOLO
+best.pt guardado en Google Drive
 ```
 
 ---
 
-# 📌 Comandos principales
+# 🛠️ 31. Problemas comunes
 
-## Instalar dependencias
+## Error: No module named ultralytics
+
+Ejecutar:
+
+```powershell
+py -m pip install -U ultralytics
+```
+
+---
+
+## Error: No module named cv2
+
+Ejecutar:
+
+```powershell
+py -m pip install -U opencv-python
+```
+
+---
+
+## Error: No module named mysql
+
+Ejecutar:
+
+```powershell
+py -m pip install -U mysql-connector-python
+```
+
+---
+
+## Error: No module named yt_dlp
+
+Ejecutar:
+
+```powershell
+py -m pip install -U yt-dlp
+```
+
+---
+
+## Error al conectar con MySQL
+
+Comprobar:
+
+```text
+XAMPP
+→ MySQL
+→ Running
+```
+
+También revisar dentro del código:
+
+```python
+host
+user
+password
+```
+
+---
+
+## No se encuentra el modelo
+
+Comprobar que el archivo:
+
+```text
+best_reentrenado.pt
+```
+
+esté en la misma carpeta que los scripts.
+
+Ejemplo:
+
+```text
+PROYECTO_YOLO/
+│
+├── best_reentrenado.pt
+├── deteccion_senales_yt.py
+└── deteccion_senales_roboflow.py
+```
+
+---
+
+## No se encuentra data.yaml
+
+En entrenamiento local ejecutar:
+
+```powershell
+Get-ChildItem "RUTA_DEL_DATASET" -Filter data.yaml -Recurse
+```
+
+Después comprobar que esta variable tenga la ruta correcta:
+
+```python
+CARPETA_DATASET = r"C:\RUTA\DEL\DATASET"
+```
+
+---
+
+## Windows muestra "ruta demasiado larga"
+
+Extraer el dataset en una ubicación más corta.
+
+Por ejemplo:
+
+```text
+C:\dataset-yolo
+```
+
+en lugar de una ruta larga como:
+
+```text
+C:\Users\Usuario\Documents\Proyectos\ProyectoYOLO\Datasets\Versiones\Version10\...
+```
+
+---
+
+# 📌 32. Comandos rápidos
+
+## Instalar todo en una PC nueva
 
 ```powershell
 py -m pip install --upgrade pip
 ```
 
+Después:
+
 ```powershell
 py -m pip install -U ultralytics opencv-python mysql-connector-python yt-dlp
 ```
 
-## Ejecutar YouTube
+---
+
+## Comprobar instalación
+
+```powershell
+py -c "from ultralytics import YOLO; import cv2; import mysql.connector; import yt_dlp; print('TODO INSTALADO CORRECTAMENTE')"
+```
+
+---
+
+## Ejecutar detección sobre YouTube
 
 ```powershell
 py deteccion_senales_yt.py
 ```
 
-## Ejecutar RTSP
+---
+
+## Ejecutar cámara RTSP
 
 ```powershell
 py deteccion_senales_roboflow.py
 ```
+
+---
 
 ## Entrenar localmente
 
@@ -1137,23 +1745,22 @@ py deteccion_senales_roboflow.py
 py entrenar.py
 ```
 
-## Comprobar GPU
-
-```powershell
-nvidia-smi
-```
-
 ---
 
-# ✅ Uso normal
+# ✅ 33. Uso normal del proyecto
 
-Después de realizar la instalación inicial:
+Una vez que la computadora ya tiene Python y todas las librerías instaladas:
 
 ```text
-1. Abrir XAMPP
-2. Iniciar MySQL
-3. Abrir CAMARA_YOLO
-4. Ejecutar el script requerido
+Abrir XAMPP
+     ↓
+Iniciar MySQL
+     ↓
+Abrir proyecto
+     ↓
+Verificar modelo .pt
+     ↓
+Ejecutar script
 ```
 
 Por ejemplo:
@@ -1162,15 +1769,52 @@ Por ejemplo:
 py deteccion_senales_yt.py
 ```
 
-Para entrenar un modelo:
+o:
 
-```text
-1. Exportar el dataset desde Roboflow
-2. Colocarlo en CAMARA_YOLO/dataset
-3. Revisar la configuración de entrenar.py
-4. Ejecutar py entrenar.py
-5. Obtener best.pt
-6. Probar el nuevo modelo
+```powershell
+py deteccion_senales_roboflow.py
 ```
 
 No es necesario crear ni activar un entorno virtual.
+
+---
+
+# ✅ 34. Flujo para entrenar
+
+Para entrenamiento local:
+
+```text
+Roboflow
+   ↓
+Descargar ZIP
+   ↓
+Extraer dataset
+   ↓
+Configurar entrenar.py
+   ↓
+py entrenar.py
+   ↓
+best.pt
+```
+
+Para Google Colab:
+
+```text
+Roboflow
+   ↓
+Obtener código de descarga
+   ↓
+Colab
+   ↓
+Conectar Drive
+   ↓
+Descargar dataset
+   ↓
+Entrenar
+   ↓
+best.pt guardado en Drive
+```
+
+XAMPP y MySQL **no son necesarios durante el entrenamiento**.
+
+Solamente se utilizan posteriormente cuando los scripts de detección necesitan registrar los objetos detectados.
